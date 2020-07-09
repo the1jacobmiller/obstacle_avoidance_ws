@@ -1,4 +1,4 @@
-# Ford Urban Workspace
+# Obstacle Avoidance Workspace
 
 ## Simulation Instructions
 - roscore
@@ -20,11 +20,6 @@
 ### Install Dataspeed DBW Simulator
 - bash <(wget -q -O - https://bitbucket.org/DataspeedInc/ros_binaries/raw/master/scripts/setup.bash)
 - ros-{distro}-dataspeed-dbw-simulator
-
-### Install Delphi ESR Radar
-- sudo sh -c 'echo "deb [trusted=yes]  https://s3.amazonaws.com/autonomoustuff-repo/ $(lsb_release -sc) main"  > /etc/apt/sources.list.d/autonomoustuff-public.list'
-- sudo apt-get update
-- sudo apt install ros-{distro}-delphi-esr
 
 ### Install CPPPAD
 - sudo apt-get install gfortran
