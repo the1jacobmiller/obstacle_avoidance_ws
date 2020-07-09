@@ -1,0 +1,9 @@
+[submodule "src/path-planning"]
+	path = src/path-planning
+	url = https://github.com/the1jacobmiller/path-planning.git
+[submodule "src/motion-planning"]
+	path = src/motion-planning
+	url = https://github.com/the1jacobmiller/motion-planning.git
+[submodule "src/control"]
+	path = src/control
+	url = https://github.com/the1jacobmiller/control.git

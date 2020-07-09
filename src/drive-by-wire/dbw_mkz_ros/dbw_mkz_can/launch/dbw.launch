@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="live" default="true" />
+  <arg name="load_urdf" default="true" />
+  <arg name="twist_controller" default="true" />
+  <arg name="vehicle_ns" default="vehicle" />
+  <arg name="can_ns" default="/can_bus_dbw" />
+  <arg name="can_oxts" default="/can_bus_oxts" />
+  <arg name="can_delphi" default="/can_bus_delphi" />
+  <arg name="esr_frame_id" default="esr_1" />
+  <arg name="esr_upside_down" default="false" />
+  <arg name="viz_mature_tracks_only" default="false" />
+
+  <!-- CAN Bus Hardware -->
+  <node if="$(arg live)" pkg="dataspeed_can_usb" type="can_node" name="can_node" output="screen">
+    <remap from="can_bus_1" to="can_bus_broken"/>
+    <param name="bitrate_1" value="1000000" />
+    <remap from="can_bus_2" to="$(arg can_oxts)"/>
+    <param name="bitrate_2" value="1000000" />
+    <remap from="can_bus_3" to="$(arg can_ns)"/>
+    <param name="bitrate_3" value="500000" />
+    <param name="channel_3_mask_0"  value="0x800007F0" />
+    <param name="channel_3_match_0" value="0x00000060" /> <!-- SID 0x060 to 0x06F -->
+    <param name="channel_3_mask_1"  value="0x800007FC" />
+    <param name="channel_3_match_1" value="0x00000070" /> <!-- SID 0x070 to 0x073 -->
+    <param name="channel_3_mask_2"  value="0x800007FE" />
+    <param name="channel_3_match_2" value="0x00000074" /> <!-- SID 0x074 to 0x075 -->
+    <param name="channel_3_mask_3"  value="0x800007FE" />
+    <param name="channel_3_match_3" value="0x0000007E" /> <!-- SID 0x07E to 0x07F -->
+    <!--param name="channel_3_mask_4"  value="0x80000000" /-->
+    <!--param name="channel_3_match_4" value="0x00000000" /--> <!-- SID 0x000 to 0x7FF -->
+    <remap from="can_bus_4" to="$(arg can_delphi)"/>
+    <param name="bitrate_4" value="500000" />
+  </node>
+
+  <!-- Vehicle Interface -->
+  <arg name="frame_id" default="base_footprint"/>
+  <arg name="warn_cmds" default="true"/>
+  <arg name="buttons" default="true"/>
+  <arg name="boo_control"   default="true"/>
+  <arg name="boo_thresh_lo" default="0.20"/>
+  <arg name="boo_thresh_hi" default="0.22"/>
+  <arg name="ackermann_wheelbase" default="2.8498"/>
+  <arg name="ackermann_track"     default="1.5824"/>
+  <arg name="steering_ratio"      default="14.8"/>
+  <arg name="twist_use_pedals"   default="True"/>
+  <arg name="twist_use_steering" default="True"/>
+  <arg name="decel_max" default="3.0"/>
+  <arg name="accel_max" default="3.0"/>
+  <arg name="no_velodyne" default="false"/>
+
+  <group ns="$(arg vehicle_ns)" >
+    <node pkg="dbw_mkz_can" type="dbw_node" name="dbw_node" output="screen">
+      <remap from="can_rx" to="$(arg can_ns)/can_rx"/>
+      <remap from="can_tx" to="$(arg can_ns)/can_tx"/>
+      <param name="frame_id" value="$(arg frame_id)" />
+      <param name="warn_cmds" value="$(arg warn_cmds)" />
+      <param name="buttons" value="$(arg buttons)" />
+      <param name="boo_control" value="$(arg boo_control)" />
+      <param name="boo_thresh_lo" value="$(arg boo_thresh_lo)" />
+      <param name="boo_thresh_hi" value="$(arg boo_thresh_hi)" />
+      <param name="ackermann_wheelbase" value="$(arg ackermann_wheelbase)" />
+      <param name="ackermann_track" value="$(arg ackermann_track)" />
+      <param name="steering_ratio" value="$(arg steering_ratio)" />
+    </node>
+    <node if="$(arg twist_controller)" pkg="dbw_mkz_twist_controller" type="twist_controller" name="twist_controller" output="screen">
+      <param name="ackermann_wheelbase" value="$(arg ackermann_wheelbase)" />
+      <param name="ackermann_track" value="$(arg ackermann_track)" />
+      <param name="steering_ratio" value="$(arg steering_ratio)" />
+      <param name="pub_pedals" value="$(arg twist_use_pedals)" />
+      <param name="pub_steering" value="$(arg twist_use_steering)" />
+      <param name="decel_max" value="$(arg decel_max)" />
+      <param name="accel_max" value="$(arg accel_max)" />
+    </node>
+
+    <node pkg="oxts_can_reader" type="oxts_reader" name="oxts_reader" output="screen">
+    </node>
+
+
+    <include if="$(arg load_urdf)" file="$(find dbw_mkz_description)/launch/mkz.launch" />
+  </group>
+
+  <node pkg="delphi_esr" type="delphi_esr_can" name="delphi_esr_can">
+    <remap from="can_tx" to="/can_bus_delphi/can_rx"/>
+    <remap from="can_rx" to="/can_bus_delphi/can_tx"/>
+    <param name="sensor_frame_id" value="$(arg esr_frame_id)"/>
+    <param name="sensor_upside_down" value="$(arg esr_upside_down)"/>
+    <!-- removes the noise of new tracks in rviz and only vizualizes the mature tracks -->
+    <param name="viz_mature_tracks_only" value="$(arg viz_mature_tracks_only)"/>
+  </node>
+
+  <node pkg="localization"  type="pub_gnss_pose" name="pub_gnss_pose" />
+
+  <node pkg="tf"  type="static_transform_publisher" name="world_to_map" args="0 0 0 0 0 0 /world /map 10" />
+  <node pkg="tf" type="static_transform_publisher" name="perception_obstacles_to_gps" args="0 0 0 0 0 0 /gps /perception_obstacles 10"/>
+</launch>
